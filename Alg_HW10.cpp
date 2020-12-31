@@ -8,7 +8,7 @@ unsigned long long int error_function (int allowed, int* rvalue, int* n, int sta
   unsigned long long int err = 0;
   for (int i=start-1; i<end; i++)
   {
-    err = err + pow((rvalue[i]-allowed), 2)*n[i];
+    err = err + round(pow((rvalue[i]-allowed), 2))*n[i];
   }
   /*if (start ==1 && end ==4)
   {
@@ -49,7 +49,7 @@ unsigned long long int choose_allowed (unsigned long long int** DP, int* allowed
           break;*/
       }
       DP[i-1][k-1] = minerr;
-      cout<<"DP ["<<i<<"][0] = "<<DP[d-1][k-1]<<endl;
+      //cout<<"DP ["<<i<<"][0] = "<<DP[d-1][k-1]<<endl;
       allowed[k-1] = minj;
     }
 
@@ -65,16 +65,19 @@ unsigned long long int choose_allowed (unsigned long long int** DP, int* allowed
   {
     for (int m=1; m<i; m++)
     {
-      minerr = DP[m-1][k-2]  + error_function(rvalue[i-m], rvalue, n, m+1, i, k);
-      for (int w = rvalue[m-1]; w <= rvalue[i-1]; w++)
+      for (int u=0; u<m; u++)
       {
-        err = DP[m-1][k-2]  + error_function(w, rvalue, n, m+1, i, k);
-        /*if (i == 4)
-          cout<<w<<" "<<err<<"\n";*/
-        if (err < minerr)
+        minerr = DP[m-1-u][k-2]  + error_function(rvalue[i-m], rvalue, n, m+1-u, d, k);
+        for (int w = rvalue[m-1]; w <= rvalue[i-1]; w++)
         {
-          minerr = err;
-          minj = w;
+          err = DP[m-1-u][k-2]  + error_function(w, rvalue, n, m+1-u, d, k);
+          /*if (i == 4)
+            cout<<w<<" "<<err<<"\n";*/
+          if (err < minerr)
+          {
+            minerr = err;
+            minj = w;
+          }
         }
         /*else
           break;*/
@@ -113,6 +116,10 @@ int main()
     DP[i] = new unsigned long long int [k];
   }
 
+
+  cout<<choose_allowed(DP, allowed, rvalue, n, d, k)<<endl;
+
+
   cout<<"DP is : \n";
   for (int i=0; i<d; i++)
   {
@@ -123,6 +130,6 @@ int main()
     cout<<endl;
   }
 
-  cout<<choose_allowed(DP, allowed, rvalue, n, d, k);
+  
 
 }
