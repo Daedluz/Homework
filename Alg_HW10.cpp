@@ -1,135 +1,216 @@
- #include <iostream>
+#include <iostream>
 #include <cmath>
-#include <valarray>
+#include <algorithm>
 using namespace std;
 
-unsigned long long int error_function (int allowed, int* rvalue, int* n, int start, int end, int k)
+long long int error_function (int allowed, int* rvalue, int* n, int start, int end)
 {
-  unsigned long long int err = 0;
-  for (int i=start-1; i<end; i++)
-  {
-    err = err + round(pow((rvalue[i]-allowed), 2))*n[i];
-  }
-  /*if (start ==1 && end ==4)
-  {
-    cout<<"start=1 end=4 "<<err<<endl;
-  }*/
-  return err;
+ long long int err = 0;
+ for (int i=start-1; i<end; i++)
+ {
+   err = err + roundl(pow((rvalue[i]-allowed), 2))*n[i];
+ }
+ return err;
 }
 
-unsigned long long int choose_allowed (unsigned long long int** DP, int* allowed, int* rvalue, int* n, int d, int k)
+long long int deltaErr (long long int** deltaE,  int* rvalue, int start, int end, int* n)
+{
+  if (deltaE[start][end] != -1)
+  {
+    return deltaE[start][end];
+  }
+
+  else
+  {
+    long long int min, err;
+    min = error_function (rvalue[start], rvalue, n, start+1, end+1);
+    for (int w=rvalue[start]+1; w<=rvalue[end]; w++)
+    {
+      err = error_function (w, rvalue, n, start+1, end+1);
+      if (err < min)
+      {
+        min = err;
+      }
+      else
+      {
+        break;
+      }
+    }
+    deltaE[start][end] = min;
+    deltaE[end][start] = min;
+    return deltaE[start][end];
+  }
+
+}
+
+
+long long int choose_allowed (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
 // return the total error of chosen
 // C(i, j) = k s.t. C(k, j-1) + F(k+1, i) is smallest
 // build the dynamic programming table DP while calling recursively
 
 {
-  unsigned long long int err , minerr, minj, min;
-  //Base Case
-  if (k == 1)
-  {
-    allowed[k-1] = 0;
-    DP[0][0] = 0;
-    minerr = error_function (0, rvalue, n, 1, d , k);
-    for (int i=2; i<=d; i++)
-    {
-      minerr = error_function (0, rvalue, n, 1, i , k);
-      //cout<<"error_function (0, rvalue, n, 1, "<<i<<" , k) = "<<err<<endl;
-      for (int j=rvalue[0]; j<rvalue[d-1]; j++)
-      {
-        //cout<<i<<" "<<j<<"\n";
-        allowed[k-1] = j;
-        err = error_function(j, rvalue, n, 1, i, k);
-        //cout<<"error_function ("<<j<<", rvalue, n, 1, "<<i<<" , k) = "<<err<<endl;
-        if (err < minerr)
-        {
-          minerr = err;
-          minj = j;
-        }
-        /*else
-          break;*/
-      }
-      DP[i-1][k-1] = minerr;
-      //cout<<"DP ["<<i<<"][0] = "<<DP[d-1][k-1]<<endl;
-      allowed[k-1] = minj;
-    }
+ long long int err , minerr, min, total, temp;
+ long double minj;
+ //Base Case
 
-    return DP[d-1][k-1] ;
-  }
+ if (k == 1)
+ {
+   DP[0][0] = 0;
+   for (int i=2; i<=d; i++)
+   {
 
-  //recursive call
-  //for every i,
-  //choose the m  s.t. DP[m][j-1]  + F(m+1, i) is smallest
-  choose_allowed (DP, allowed, rvalue, n, d, k-1);
+     minj = 0;
+     total = 0;
+     //cout<<"error_function (0, rvalue, n, 1, "<<i<<" , k) = "<<err<<endl;
+     DP[i-1][k-1] = deltaErr(deltaE, rvalue, 0, i-1, n);
+   }
 
-  for (int i=1; i<=d; i++)
-  {
-    for (int m=1; m<i; m++)
-    {
-      for (int u=0; u<m; u++)
-      {
-        minerr = DP[m-1-u][k-2]  + error_function(rvalue[i-m], rvalue, n, m+1-u, d, k);
-        for (int w = rvalue[m-1]; w <= rvalue[i-1]; w++)
-        {
-          err = DP[m-1-u][k-2]  + error_function(w, rvalue, n, m+1-u, d, k);
-          /*if (i == 4)
-            cout<<w<<" "<<err<<"\n";*/
-          if (err < minerr)
-          {
-            minerr = err;
-            minj = w;
-          }
-        }
-        /*else
-          break;*/
-      }
-      //cout<<i<<" "<<m<<" "<<minerr<<endl;
-    }
-    //cout<<i<<" "<<minj<<" "<<min<<endl;
-    DP[i-1][k-1] = minerr;
-    //cout<<"i-1 = "<<i-1<<" k-1 = "<<k-1<<" DP = "<<DP[i-1][k-1]<<endl;
+   return DP[d-1][k-1] ;
+ }
 
-  }
-  return DP[d-1][k-1] ;
+ //recursive call
+ //for every i,
+ //choose the m  s.t. DP[m][j-1]  + F(m+1, i) is smallest
+ choose_allowed (DP, deltaE, allowed, rvalue, n, d, k-1);
+
+
+ for (int i=1; i<d; i++)
+ {
+   for (int j=0; j<i; j++)
+   {
+     minerr = DP[j][k-2] + deltaErr(deltaE, rvalue, j+1, i, n);
+
+     if (j == 0)
+     {
+       min = minerr;
+       //cout<<i<<" j == 0 , min = "<<min<<endl;
+     }
+     else if (minerr < min)
+     {
+       min = minerr;
+       //cout<<i<<" "<<min<<endl;
+     }
+   }
+   //cout<<"min = "<<min<<endl;
+   DP [i][k-1] = min;
+ }
+
+
+
+ return DP[d-1][k-1] ;
 
 }
 
+
+long long int Compute (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
+{
+  long long int minerr , min;
+  if (DP[d-1][k-1] != -1)
+  {
+    return DP[d-1][k-1];
+  }
+
+  if (k == 1)
+  {
+    DP[d-1][k-1] = deltaErr(deltaE,  rvalue, 1, d, n);
+    return DP[d-1][k-1];
+  }
+  else
+  {
+    for (int j=k-2 ; j<d; j++)
+    {
+      minerr = Compute (DP, deltaE, allowed, rvalue, n, j+1, k-1) + deltaErr(deltaE, rvalue, j+2, d, n);
+
+      if (j == 0)
+      {
+        min = minerr;
+      }
+      else if (minerr < min)
+      {
+        min = minerr;
+      }
+    }
+    DP [d-1][k-1] = min;
+    return DP[d-1][k-1];
+  }
+
+
+}
+
+
+
+
 int main()
 {
-  int d = 0; // number of distinct red values
-  int k = 0; // number of red values allowed
-  cin>>d>>k;
-  int* allowed = new int [k];
-  for (int i=0; i<k; i++)
-  {
-    allowed[i] = -1;
-  }
-  int* rvalue = new int [d];
-  int* n = new int [d];
-  for (int i=0; i<d; i++)
-  {
-    cin>>rvalue[i]>>n[i];
-  }
+ int d = 0; // number of distinct red values
+ int k = 0; // number of red values allowed
+ cin>>d>>k;
+ int* allowed = new int [k];
+ for (int i=0; i<k; i++)
+ {
+   allowed[i] = -1;
+ }
+ int* rvalue = new int [d];
+ int* n = new int [d];
+ for (int i=0; i<d; i++)
+ {
+   cin>>rvalue[i]>>n[i];
+ }
 
-  unsigned long long int** DP = new unsigned long long int* [d];
-  for (int i=0; i<d; i++)
-  {
-    DP[i] = new unsigned long long int [k];
-  }
+ long long int** DP = new long long int* [d];
+ for (int i=0; i<d; i++)
+ {
+   DP[i] = new long long int [k];
+ }
+
+ long long int** deltaE = new long long int* [d];
+ //start i ends j
+ for (int i=0; i<d; i++)
+ {
+   deltaE[i] = new long long int [d];
+ }
+
+ for (int i=0; i<d; i++)
+ {
+   for (int j=0; j<d; j++)
+   {
+     deltaE[i][j] = -1;
+   }
+ }
+
+ for (int i=0; i<d; i++)
+ {
+   for (int j=0; j<k; j++)
+   {
+     DP[i][j] = -1;
+   }
+ }
+
+ long long int min, err;
+
+/* cout<<"deltaE is : \n";
+ for (int i=0; i<d; i++)
+ {
+   for (int j = 0; j < d; j++)
+   {
+     cout<<deltaE[i][j] <<" ";
+   }
+   cout<<endl;
+ }*/
+
+ cout<<choose_allowed(DP, deltaE, allowed, rvalue, n, d, k);
+
+ /*cout<<"\nDP is : \n";
+ for (int i=0; i<d; i++)
+ {
+   for (int j = 0; j < k; j++)
+   {
+     cout<<DP[i][j] <<" ";
+   }
+   cout<<endl;
+ }*/
 
 
-  cout<<choose_allowed(DP, allowed, rvalue, n, d, k)<<endl;
-
-
-  cout<<"DP is : \n";
-  for (int i=0; i<d; i++)
-  {
-    for (int j = 0; j < k; j++)
-    {
-      cout<<DP[i][j] <<" ";
-    }
-    cout<<endl;
-  }
-
-  
 
 }
