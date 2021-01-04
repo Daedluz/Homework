@@ -3,6 +3,14 @@
 #include <algorithm>
 using namespace std;
 
+// Environment : Windows 10
+// Language : C++
+// I'm using dynamic programming to solve this problem, 
+// The recurrence relation is :
+// C(i, j) = i'<i s.t. C(i', j-1) + deltaE (i'+1, i) is smallest
+
+
+//Compute square error of start to end using the given allowed number
 long long int error_function (int allowed, int* rvalue, int* n, int start, int end)
 {
  long long int err = 0;
@@ -13,8 +21,11 @@ long long int error_function (int allowed, int* rvalue, int* n, int start, int e
  return err;
 }
 
+
+// Computing deltaE and use memorization to be faster
 long long int deltaErr (long long int** deltaE,  int* rvalue, int start, int end, int* n)
 {
+
   if (deltaE[start][end] != -1)
   {
     return deltaE[start][end];
@@ -43,12 +54,10 @@ long long int deltaErr (long long int** deltaE,  int* rvalue, int start, int end
 
 }
 
-
-long long int choose_allowed (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
-// return the total error of chosen
+// return the total error of chosen numbers
 // C(i, j) = k s.t. C(k, j-1) + F(k+1, i) is smallest
 // build the dynamic programming table DP while calling recursively
-
+long long int choose_allowed (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
 {
  long long int err , minerr, min, total, temp;
  long double minj;
@@ -62,7 +71,6 @@ long long int choose_allowed (long long int** DP, long long int** deltaE, int* a
 
      minj = 0;
      total = 0;
-     //cout<<"error_function (0, rvalue, n, 1, "<<i<<" , k) = "<<err<<endl;
      DP[i-1][k-1] = deltaErr(deltaE, rvalue, 0, i-1, n);
    }
 
@@ -71,7 +79,7 @@ long long int choose_allowed (long long int** DP, long long int** deltaE, int* a
 
  //recursive call
  //for every i,
- //choose the m  s.t. DP[m][j-1]  + F(m+1, i) is smallest
+ //choose the j  s.t. DP[j][k-2]  + deltaE(j+1, i) is smallest
  choose_allowed (DP, deltaE, allowed, rvalue, n, d, k-1);
 
 
@@ -102,8 +110,8 @@ long long int choose_allowed (long long int** DP, long long int** deltaE, int* a
 
 }
 
-
-long long int Compute (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
+// A function I was about to use, but got some bugs
+/*long long int Compute (long long int** DP, long long int** deltaE, int* allowed, int* rvalue, int* n, int d, int k)
 {
   long long int minerr , min;
   if (DP[d-1][k-1] != -1)
@@ -136,7 +144,7 @@ long long int Compute (long long int** DP, long long int** deltaE, int* allowed,
   }
 
 
-}
+}*/
 
 
 
@@ -189,28 +197,6 @@ int main()
 
  long long int min, err;
 
-/* cout<<"deltaE is : \n";
- for (int i=0; i<d; i++)
- {
-   for (int j = 0; j < d; j++)
-   {
-     cout<<deltaE[i][j] <<" ";
-   }
-   cout<<endl;
- }*/
-
  cout<<choose_allowed(DP, deltaE, allowed, rvalue, n, d, k);
-
- /*cout<<"\nDP is : \n";
- for (int i=0; i<d; i++)
- {
-   for (int j = 0; j < k; j++)
-   {
-     cout<<DP[i][j] <<" ";
-   }
-   cout<<endl;
- }*/
-
-
 
 }
